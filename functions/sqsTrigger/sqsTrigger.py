@@ -10,7 +10,12 @@ def lambda_handler(event, context):
     for record in event['Records']:
         payload = json.loads(record["body"])
         table = dynamodb.Table('WindData')
-        data={'uuid': payload['uuid'], 'name': payload['name'], 'latitude': payload['latitude'], 'longitude': payload['longitude'], 'timestamp': payload['timestamp'], 'windSpeed': payload['windSpeed'], 'windDirection': payload['windDirection']}
-        #print("Adding movie: ", release_date, payload)
-        #data = json.dumps(payload)
+        latest = dynamodb.Table('LatestData')
+        data={'uuid': payload['uuid'], 'name': payload['name'], 'createdAt': payload['createdAt'], 'windSpeed': payload['windSpeed'], 'windDirection': payload['windDirection']}
         table.put_item(Item=data)
+        latest.update_item(
+                Key={'name': payload["name"], 'createdAt': payload['sensorCreatedAt']},
+                UpdateExpression="set windSpeed=:ws, windDirection=:wd, lastUpdated=:lu",
+                ExpressionAttributeValues={
+                    ':ws': payload['windSpeed'], ':wd': payload['windDirection'], ':lu': payload['createdAt']},
+                ReturnValues="UPDATED_NEW")

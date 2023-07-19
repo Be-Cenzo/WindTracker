@@ -1,6 +1,7 @@
 import sys
 from random import randrange
 import time
+import datetime
 import threading
 
 class Sensor:
@@ -13,10 +14,17 @@ class Sensor:
         self.windSpeed = randrange(10)
         self.directions = ['S','SE', 'SO', 'E', 'O', 'N', 'NE', 'NO']
         self.windDirection = self.directions[randrange(8)]
+        self.createdAt = datetime.datetime.now().timestamp()
     
     def getValue(self):
         return self.windSpeed, self.windDirection
     
+    def getWindSpeed(self):
+        return self.windSpeed
+    
+    def getWindDirection(self):
+        return self.windDirection
+
     def getName(self):
         return self.name
 
@@ -25,6 +33,9 @@ class Sensor:
     
     def getLongitude(self):
         return self.longitude
+    
+    def getCreatedAt(self):
+        return self.createdAt
 
     def setWindSpeed(self, windSpeed):
         self.windSpeed = setWindSpeed
@@ -41,11 +52,20 @@ class Sensor:
         if (randrange(10)/10) > self.changeDirectionThreshold:
             self.windDirection = self.directions[randrange(8)]
     
+    def getSignature(self):
+        item = {
+            "name": self.name,
+            "latitude": str(self.latitude),
+            "longitude": str(self.longitude),
+            "createdAt": int(self.createdAt)
+        }
+        return item
+    
     def getMessage(self):
         message = {
             "name": self.name,
-            "latitude": int(self.latitude),
-            "longitude": int(self.longitude),
+            "latitude": str(self.latitude),
+            "longitude": str(self.longitude),
             "windSpeed": int(self.windSpeed),
             "windDirection": self.windDirection
         }

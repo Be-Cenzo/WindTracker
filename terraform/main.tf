@@ -36,6 +36,18 @@ data "archive_file" "prova" {
   output_path = "../functions/ProvaAPI/prova.zip"
 }
 
+data "archive_file" "getSensors" {
+  type        = "zip"
+  source_file = "../functions/getSensors/getSensors.py"
+  output_path = "../functions/getSensors/getSensors.zip"
+}
+
+data "archive_file" "getDataForSensor" {
+  type        = "zip"
+  source_file = "../functions/getDataForSensor/getDataForSensor.py"
+  output_path = "../functions/getDataForSensor/getDataForSensor.zip"
+}
+
 resource "aws_lambda_function" "sqsTriggerLambda" {
   # If the file is not in the current working directory you will need to include a
   # path.module in the filename.
@@ -56,7 +68,31 @@ resource "aws_lambda_function" "provaLambda" {
   role          = aws_iam_role.iam_for_lambda.arn
   handler       = "prova.lambda_handler"
 
-  source_code_hash = data.archive_file.sqsTrigger.output_base64sha256
+  source_code_hash = data.archive_file.prova.output_base64sha256
+
+  runtime = "python3.10"
+
+}
+
+resource "aws_lambda_function" "getSensors" {
+  filename      = "../functions/getSensors/getSensors.zip"
+  function_name = "getSensors"
+  role          = aws_iam_role.iam_for_lambda.arn
+  handler       = "getSensors.lambda_handler"
+
+  source_code_hash = data.archive_file.getSensors.output_base64sha256
+
+  runtime = "python3.10"
+
+}
+
+resource "aws_lambda_function" "getDataForSensor" {
+  filename      = "../functions/getDataForSensor/getDataForSensor.zip"
+  function_name = "getDataForSensor"
+  role          = aws_iam_role.iam_for_lambda.arn
+  handler       = "getDataForSensor.lambda_handler"
+
+  source_code_hash = data.archive_file.getDataForSensor.output_base64sha256
 
   runtime = "python3.10"
 
@@ -75,7 +111,13 @@ resource "aws_api_gateway_rest_api" "api" {
 }
 
 resource "aws_api_gateway_resource" "resource" {
-  path_part   = "resource"
+  path_part   = "getSensors"
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.api.id
+}
+
+resource "aws_api_gateway_resource" "getDataForSensorResource" {
+  path_part   = "getDataForSensor"
   parent_id   = aws_api_gateway_rest_api.api.root_resource_id
   rest_api_id = aws_api_gateway_rest_api.api.id
 }
@@ -87,13 +129,29 @@ resource "aws_api_gateway_method" "method" {
   authorization = "NONE"
 }
 
+resource "aws_api_gateway_method" "getDataForSensorMethod" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.getDataForSensorResource.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
 resource "aws_api_gateway_integration" "integration" {
   rest_api_id             = aws_api_gateway_rest_api.api.id
   resource_id             = aws_api_gateway_resource.resource.id
   http_method             = aws_api_gateway_method.method.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.provaLambda.invoke_arn
+  uri                     = aws_lambda_function.getSensors.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "GDFSintegration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.getDataForSensorResource.id
+  http_method             = aws_api_gateway_method.getDataForSensorMethod.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.getDataForSensor.invoke_arn
 }
 
 resource "aws_api_gateway_deployment" "deploy" {
@@ -111,6 +169,9 @@ resource "aws_api_gateway_deployment" "deploy" {
       aws_api_gateway_resource.resource.id,
       aws_api_gateway_method.method.id,
       aws_api_gateway_integration.integration.id,
+      aws_api_gateway_resource.getDataForSensorResource.id,
+      aws_api_gateway_method.getDataForSensorMethod.id,
+      aws_api_gateway_integration.GDFSintegration.id,
     ]))
   }
 

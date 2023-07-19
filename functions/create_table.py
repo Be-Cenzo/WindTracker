@@ -6,21 +6,77 @@ table = dynamodb.create_table(
     TableName = 'WindData',
     KeySchema = [
         {
-            'AttributeName': 'uuid',
+            'AttributeName': 'name',
             'KeyType': 'HASH'
         },
         {
-            'AttributeName': 'timestamp',
+            'AttributeName': 'createdAt',
             'KeyType': 'RANGE'
         }
     ],
     AttributeDefinitions = [
         {
-            'AttributeName': 'uuid',
+            'AttributeName': 'name',
             'AttributeType': 'S'
         },
         {
-            'AttributeName': 'timestamp',
+            'AttributeName': 'createdAt',
+            'AttributeType': 'N'
+        }
+    ],
+    ProvisionedThroughput = {
+        'ReadCapacityUnits': 10,
+        'WriteCapacityUnits': 10
+    }
+)
+
+table = dynamodb.create_table(
+    TableName = 'LatestData',
+    KeySchema = [
+        {
+            'AttributeName': 'name',
+            'KeyType': 'HASH'
+        },
+        {
+            'AttributeName': 'createdAt',
+            'KeyType': 'RANGE'
+        }
+    ],
+    AttributeDefinitions = [
+        {
+            'AttributeName': 'name',
+            'AttributeType': 'S'
+        },
+        {
+            'AttributeName': 'createdAt',
+            'AttributeType': 'N'
+        }
+    ],
+    ProvisionedThroughput = {
+        'ReadCapacityUnits': 10,
+        'WriteCapacityUnits': 10
+    }
+)
+
+table = dynamodb.create_table(
+    TableName = 'Sensors',
+    KeySchema = [
+        {
+            'AttributeName': 'name',
+            'KeyType': 'HASH'
+        },
+        {
+            'AttributeName': 'createdAt',
+            'KeyType': 'RANGE'
+        }
+    ],
+    AttributeDefinitions = [
+        {
+            'AttributeName': 'name',
+            'AttributeType': 'S'
+        },
+        {
+            'AttributeName': 'createdAt',
             'AttributeType': 'N'
         }
     ],

@@ -1,4 +1,5 @@
 from random import randrange
+import random
 from sensors import Sensor
 import sys
 import time
@@ -12,15 +13,41 @@ class Factory:
     def __init__(self, name, sensorNum):
         self.name = name
         self.sensorNum = sensorNum
-        self.startLatitude = randrange(10)
-        self.startLongitude = randrange(10)
+        self.startLatitude = 40.853294
+        self.startLongitude = 14.305573
         self.sensors = []
         self.createSensors()
+        self.subscribeToInfrastracture()
     
     def createSensors(self):
         for i in range(self.sensorNum):
-            sensor = Sensor(f"Sensor{i}", self.startLatitude + randrange(5), self.startLongitude + randrange(5))
+            lat = self.startLatitude + random.uniform(0, 0.2)
+            lng = self.startLongitude + random.uniform(-0.125, 0.125)
+            sensor = Sensor(f"Sensor{i}", lat, lng)
             self.sensors.append(sensor)
+    
+    def subscribeToInfrastracture(self):
+        dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:4566")
+        table = dynamodb.Table('Sensors')
+        latest = dynamodb.Table('LatestData')
+        for i in range(self.sensorNum):
+            item = self.sensors[i].getSignature()
+            id = str(uuid.uuid4())
+            item.update({"uuid": id})
+            response = table.put_item(
+                Item = item
+            )
+            data = {
+                "windSpeed": self.sensors[i].getWindSpeed(),
+                "windDirection": self.sensors[i].getWindSpeed(),
+                "name": item["name"],
+                "createdAt": item["createdAt"],
+                "lastUpdated": item["createdAt"]
+            }
+            response = latest.put_item(
+                Item = data
+            )
+            print(data)
     
     def printAll(self):
         for i in range(self.sensorNum):
@@ -34,24 +61,24 @@ class Factory:
             for i in range(self.sensorNum):
                 self.sensors[i].updateWindSpeed()
                 self.sensors[i].updateWindDirection()
-                time.sleep(updateTime)
+            time.sleep(updateTime)
             self.postToQueue()
             if event.is_set():
                 break
 
     def postToQueue(self):
+        sqs = boto3.client('sqs', aws_access_key_id=None, aws_secret_access_key=None, endpoint_url='http://localhost:4566')
         for i in range(self.sensorNum):
             msg = self.sensors[i].getMessage()
             id = str(uuid.uuid4())
             time = int(datetime.datetime.now().timestamp())
-            msg.update({"uuid": id, "timestamp": time})
+            msg.update({"uuid": id, "createdAt": time, "sensorCreatedAt": int(self.sensors[i].getCreatedAt())})
             print(msg)
-            postMessageToQueue(msg)
+            postMessageToQueue(msg, sqs)
 
-def postMessageToQueue(message):
-    sqs = boto3.client('sqs', aws_access_key_id=None, aws_secret_access_key=None, endpoint_url='http://localhost:4566')
+def postMessageToQueue(message, sqsClient):
     queue_url = 'http://localhost:4566/000000000000/sqs_queue'
-    resp = sqs.send_message(
+    resp = sqsClient.send_message(
         QueueUrl=queue_url,
         MessageBody=(
             json.dumps(message)
@@ -59,15 +86,16 @@ def postMessageToQueue(message):
     )
     print(resp['MessageId'])
 
-print(sys.argv[1])
+
 num = int(sys.argv[1])
+update = int(sys.argv[2])
+duration = int(sys.argv[3])
 factory = Factory("Factory", num)
 factory.postToQueue()
-
 event = threading.Event()
 
-thread1 = threading.Thread(name='h1', target=factory.updateValues, args=(event, 1))
+thread1 = threading.Thread(name='h1', target=factory.updateValues, args=(event, update))
 thread1.start()
-time.sleep(1.5)
+time.sleep(duration)
 
 event.set()
