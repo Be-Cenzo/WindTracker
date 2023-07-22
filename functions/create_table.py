@@ -6,7 +6,7 @@ table = dynamodb.create_table(
     TableName = 'WindData',
     KeySchema = [
         {
-            'AttributeName': 'name',
+            'AttributeName': 'sensorName',
             'KeyType': 'HASH'
         },
         {
@@ -16,7 +16,7 @@ table = dynamodb.create_table(
     ],
     AttributeDefinitions = [
         {
-            'AttributeName': 'name',
+            'AttributeName': 'sensorName',
             'AttributeType': 'S'
         },
         {
@@ -34,7 +34,7 @@ table = dynamodb.create_table(
     TableName = 'LatestData',
     KeySchema = [
         {
-            'AttributeName': 'name',
+            'AttributeName': 'sensorName',
             'KeyType': 'HASH'
         },
         {
@@ -44,7 +44,7 @@ table = dynamodb.create_table(
     ],
     AttributeDefinitions = [
         {
-            'AttributeName': 'name',
+            'AttributeName': 'sensorName',
             'AttributeType': 'S'
         },
         {
@@ -62,7 +62,7 @@ table = dynamodb.create_table(
     TableName = 'Sensors',
     KeySchema = [
         {
-            'AttributeName': 'name',
+            'AttributeName': 'sensorName',
             'KeyType': 'HASH'
         },
         {
@@ -72,7 +72,7 @@ table = dynamodb.create_table(
     ],
     AttributeDefinitions = [
         {
-            'AttributeName': 'name',
+            'AttributeName': 'sensorName',
             'AttributeType': 'S'
         },
         {

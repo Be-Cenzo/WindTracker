@@ -17,6 +17,8 @@ class Factory:
         self.startLongitude = 14.305573
         self.sensors = []
         self.createSensors()
+        self.topic_arn = ""
+        self.getTopicArn()
         self.subscribeToInfrastracture()
     
     def createSensors(self):
@@ -25,6 +27,21 @@ class Factory:
             lng = self.startLongitude + random.uniform(-0.125, 0.125)
             sensor = Sensor(f"Sensor{i}", lat, lng)
             self.sensors.append(sensor)
+
+    def getTopicArn(self):
+        sns = boto3.client('sns', endpoint_url='http://localhost:4566')
+        all_topics = sns.list_topics()
+        all_topics = all_topics["Topics"]
+        for topic in all_topics:
+            arn = topic["TopicArn"] 
+            attr = sns.get_topic_attributes(
+                TopicArn=arn
+            )
+            name = attr["Attributes"]["DisplayName"]
+            if(name == "errors-topic"):
+                print(arn)
+                self.topic_arn = arn
+                break
     
     def subscribeToInfrastracture(self):
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:4566")
@@ -40,9 +57,10 @@ class Factory:
             data = {
                 "windSpeed": self.sensors[i].getWindSpeed(),
                 "windDirection": self.sensors[i].getWindSpeed(),
-                "name": item["name"],
+                "sensorName": item["sensorName"],
                 "createdAt": item["createdAt"],
-                "lastUpdated": item["createdAt"]
+                "lastUpdated": item["createdAt"],
+                "error": self.sensors[i].isError()
             }
             response = latest.put_item(
                 Item = data
@@ -56,40 +74,51 @@ class Factory:
             print(f"Direzione del vento: {self.sensors[i].getValue()[1]}")
             print(f"Latitude: {self.sensors[i].getLatitude()} Longitude: {self.sensors[i].getLongitude()}")
     
-    def updateValues(self, event, updateTime):
+    def updateValues(self, toggleUpdate, stopUpdate, updateTime):
         while True:
-            for i in range(self.sensorNum):
-                self.sensors[i].updateWindSpeed()
-                self.sensors[i].updateWindDirection()
-            time.sleep(updateTime)
-            self.postToQueue()
-            if event.is_set():
+            if stopUpdate.is_set():
                 break
+            while True:
+                if toggleUpdate.is_set() or stopUpdate.is_set():
+                    break
+                time.sleep(updateTime)
+                for i in range(self.sensorNum):
+                    if not self.sensors[i].isError():
+                        self.sensors[i].updateWindSpeed()
+                        self.sensors[i].updateWindDirection()
+                        self.sensors[i].updateError()
+                        if self.sensors[i].isError():
+                            self.sensors[i].postToTopic(self.topic_arn, self.sensors[i].getSignature(), "Errore nel sensore!")
+                    self.postToQueue()
 
     def postToQueue(self):
-        sqs = boto3.client('sqs', aws_access_key_id=None, aws_secret_access_key=None, endpoint_url='http://localhost:4566')
+        sqs = boto3.client('sqs', endpoint_url='http://localhost:4566')
         for i in range(self.sensorNum):
-            msg = self.sensors[i].getMessage()
-            id = str(uuid.uuid4())
-            time = int(datetime.datetime.now().timestamp())
-            msg.update({"uuid": id, "createdAt": time, "sensorCreatedAt": int(self.sensors[i].getCreatedAt())})
-            print(msg)
-            postMessageToQueue(msg, sqs)
+            if not self.sensors[i].isError():
+                msg = self.sensors[i].getMessage()
+                id = str(uuid.uuid4())
+                time = int(datetime.datetime.now().timestamp())
+                msg.update({"uuid": id, "createdAt": time, "sensorCreatedAt": int(self.sensors[i].getCreatedAt())})
+                #print(msg)
+                postMessageToQueue(msg, sqs)
 
-def postMessageToQueue(message, sqsClient):
+def postMessageToQueue(message, sqs_client):
     queue_url = 'http://localhost:4566/000000000000/sqs_queue'
-    resp = sqsClient.send_message(
+    resp = sqs_client.send_message(
         QueueUrl=queue_url,
         MessageBody=(
             json.dumps(message)
         )
     )
-    print(resp['MessageId'])
+    #print(resp['MessageId'])
 
+def prova(e, x):
+    while True :
+        x.updateWindSpeed()
+        if e.is_set():
+            break
 
-num = int(sys.argv[1])
-update = int(sys.argv[2])
-duration = int(sys.argv[3])
+"""
 factory = Factory("Factory", num)
 factory.postToQueue()
 event = threading.Event()
@@ -99,3 +128,32 @@ thread1.start()
 time.sleep(duration)
 
 event.set()
+"""
+
+num = int(sys.argv[1])
+update = int(sys.argv[2])
+duration = int(sys.argv[3])
+
+factory = Factory("Factory", num)
+factory.postToQueue()
+
+toggleUpdate = threading.Event()
+toggleUpdate.set()
+stopUpdate = threading.Event()
+
+updater = threading.Thread(name='h1', target=factory.updateValues, args=(toggleUpdate, stopUpdate, update))
+updater.start()
+
+while True :
+    y = input()
+    if y == "t" :
+        if toggleUpdate.is_set():
+            toggleUpdate.clear()
+        else:
+            toggleUpdate.set()
+        print(f"toggleUpdate is now:{toggleUpdate.is_set()}")
+    if y == "stop" :
+        stopUpdate.set()
+        print("Stopped")
+    if y == "s" :
+        break

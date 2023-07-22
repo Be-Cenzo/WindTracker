@@ -48,6 +48,12 @@ data "archive_file" "getDataForSensor" {
   output_path = "../functions/getDataForSensor/getDataForSensor.zip"
 }
 
+data "archive_file" "sensorError" {
+  type        = "zip"
+  source_file = "../functions/sensorError/sensorError.py"
+  output_path = "../functions/sensorError/sensorError.zip"
+}
+
 resource "aws_lambda_function" "sqsTriggerLambda" {
   # If the file is not in the current working directory you will need to include a
   # path.module in the filename.
@@ -58,7 +64,7 @@ resource "aws_lambda_function" "sqsTriggerLambda" {
 
   source_code_hash = data.archive_file.sqsTrigger.output_base64sha256
 
-  runtime = "python3.10"
+  runtime = "python3.9"
 
 }
 
@@ -70,7 +76,7 @@ resource "aws_lambda_function" "provaLambda" {
 
   source_code_hash = data.archive_file.prova.output_base64sha256
 
-  runtime = "python3.10"
+  runtime = "python3.9"
 
 }
 
@@ -82,7 +88,7 @@ resource "aws_lambda_function" "getSensors" {
 
   source_code_hash = data.archive_file.getSensors.output_base64sha256
 
-  runtime = "python3.10"
+  runtime = "python3.9"
 
 }
 
@@ -94,7 +100,19 @@ resource "aws_lambda_function" "getDataForSensor" {
 
   source_code_hash = data.archive_file.getDataForSensor.output_base64sha256
 
-  runtime = "python3.10"
+  runtime = "python3.9"
+
+}
+
+resource "aws_lambda_function" "sensorError" {
+  filename      = "../functions/sensorError/sensorError.zip"
+  function_name = "sensorError"
+  role          = aws_iam_role.iam_for_lambda.arn
+  handler       = "sensorError.lambda_handler"
+
+  source_code_hash = data.archive_file.sensorError.output_base64sha256
+
+  runtime = "python3.9"
 
 }
 
@@ -184,4 +202,29 @@ resource "aws_api_gateway_stage" "stage" {
   deployment_id = aws_api_gateway_deployment.deploy.id
   rest_api_id   = aws_api_gateway_rest_api.api.id
   stage_name    = "api"
+}
+
+resource "aws_sns_topic" "errors_topic" {
+    name = "errors-topic"
+    display_name = "errors-topic"
+}
+
+resource "aws_sns_topic_subscription" "errors_topic_email" {
+    topic_arn = "${aws_sns_topic.errors_topic.arn}"
+    protocol  = "email"
+    endpoint  = "infra-mantainer@windtracker.com"
+}
+
+resource "aws_sns_topic_subscription" "errors_topic_lambda" {
+    topic_arn = "${aws_sns_topic.errors_topic.arn}"
+    protocol  = "lambda"
+    endpoint  = "${aws_lambda_function.sensorError.arn}"
+}
+
+resource "aws_lambda_permission" "sensorError_permission" {
+    statement_id = "AllowExecutionFromSNS"
+    action = "lambda:InvokeFunction"
+    function_name = "${aws_lambda_function.sensorError.arn}"
+    principal = "sns.amazonaws.com"
+    source_arn = "${aws_sns_topic.errors_topic.arn}"
 }

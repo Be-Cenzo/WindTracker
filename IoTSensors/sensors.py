@@ -3,6 +3,8 @@ from random import randrange
 import time
 import datetime
 import threading
+import boto3
+import json
 
 class Sensor:
     def __init__(self, name, latitude, longitude):
@@ -14,6 +16,8 @@ class Sensor:
         self.windSpeed = randrange(10)
         self.directions = ['S','SE', 'SO', 'E', 'O', 'N', 'NE', 'NO']
         self.windDirection = self.directions[randrange(8)]
+        self.error = False
+        self.errorThreshold = 0.95
         self.createdAt = datetime.datetime.now().timestamp()
     
     def getValue(self):
@@ -33,6 +37,9 @@ class Sensor:
     
     def getLongitude(self):
         return self.longitude
+
+    def isError(self):
+        return self.error
     
     def getCreatedAt(self):
         return self.createdAt
@@ -44,32 +51,52 @@ class Sensor:
         self.windDirection = windDirection
     
     def updateWindSpeed(self):
+        minus = 1
         if randrange(2) and self.windSpeed > 1:
-            self.casuality = -self.casuality
-        self.windSpeed = self.windSpeed+(randrange(10)*self.casuality)
+            minus = -1
+        self.windSpeed = self.windSpeed+(randrange(10)*self.casuality*minus)
     
     def updateWindDirection(self):
         if (randrange(10)/10) > self.changeDirectionThreshold:
             self.windDirection = self.directions[randrange(8)]
     
+    def updateError(self):
+        if (randrange(100)/100) >= self.errorThreshold:
+            print("Error True")
+            self.error = True
+
+    
     def getSignature(self):
         item = {
-            "name": self.name,
+            "sensorName": self.name,
             "latitude": str(self.latitude),
             "longitude": str(self.longitude),
+            "error": self.error,
             "createdAt": int(self.createdAt)
         }
         return item
     
     def getMessage(self):
         message = {
-            "name": self.name,
+            "sensorName": self.name,
             "latitude": str(self.latitude),
             "longitude": str(self.longitude),
-            "windSpeed": int(self.windSpeed),
-            "windDirection": self.windDirection
+            "windSpeed": str(self.windSpeed),
+            "windDirection": self.windDirection,
+            "error": self.error,
+            "createdAt": int(self.createdAt)
         }
         return message
+    
+    def postToTopic(self, topic_arn, message, subject):
+        sns_resource = boto3.client('sns', endpoint_url='http://localhost:4566')
+        response = sns_resource.publish(
+            TopicArn=topic_arn,
+            Message=json.dumps({'default':json.dumps(message)}),
+            Subject=subject,
+            MessageStructure='json',
+        )
+
         
 def automaticUpdate(sensor, event):
     while True:
