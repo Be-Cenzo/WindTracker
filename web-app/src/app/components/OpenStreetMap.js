@@ -1,24 +1,29 @@
 'use client'
 
 import React, { useEffect, useState, useRef } from 'react'
-import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 //import '../node_modules/leaflet/dist/leaflet.css'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet';
 import marker from '../img/marker.png';
 import MarkerPoint from './MarkerPoint';
+import Navbar from './Navbar';
+import '../css/map.css'
+import Bottombar from './Bottombar';
 const myIcon = new L.Icon({
     iconUrl: marker.src,
     iconSize: [60, 55]
 });
 
 const OpenStreetMap = () => {
-  const [center, setCenter] = useState({ lat: 40.853294, lng: 14.305573 })
-  const [location, setLocation] = useState({loaded: true, error : false, coordinates: { lat: 40.853294, lng: 14.305573 }})
-  const [markers, setMarkers] =  useState({loaded: true, error : false, markers: [{name: "Sensor0", latitude: 42.853294, longitude: 14.305573 }]})
+  const [map, setMap] = useState(null);
+  const [center, setCenter] = useState({ lat: 40.853294, lng: 14.305573 });
+  const [position, setPosition] = useState({loaded: true, error : false, coordinates: { lat: 40.853294, lng: 14.305573 }});
+  const [markers, setMarkers] =  useState({loaded: true, error : false, markers: [{name: "Sensor0", latitude: 42.853294, longitude: 14.305573 }]});
+  const [isPositioning, setIsPositioning] = useState(false);
   const ZOOM_LEVEL = 13
   const mapRef = useRef()
-  const restId = "b037v1j24d"
+  const restId = "yxf0kstcl3"
   const basePath = "http://localhost:4566/restapis/" + restId + "/local/_user_request_/";
   
   const updateMarkers = (points) => {
@@ -32,10 +37,6 @@ const OpenStreetMap = () => {
       let points = {loaded: true, error : false, markers: json.sensors};
       setMarkers(points);
       console.log(points);
-
-      console.log(json.sensors[0].latitude);
-      let point = {loaded: true, error : false, coordinates: { lat: json.sensors[2].latitude, lng: json.sensors[2].longitude }};
-      console.log(point);
       return points;
     }).then(res => {
       let points = {...res}
@@ -65,6 +66,15 @@ const OpenStreetMap = () => {
     //}
   }, [markers]);
 
+  const pickAPosition = () => {
+    /*console.log(mapRef);
+    map.locate().on("locationfound", function (e) {
+      setPosition(e.latlng);
+      map.flyTo(e.latlng, map.getZoom());
+    });*/
+    setIsPositioning(true);
+  }
+
   const refresh = () => {
     let points = {...markers};
     fetch(basePath + "getDataForSensor")
@@ -88,35 +98,47 @@ const OpenStreetMap = () => {
     console.log(markers);
   }
 
+  const PositionHandler = () => {
+    const map = useMapEvents({
+        click: (e) => {
+          if(isPositioning){
+            let pos = {... position};
+            pos.coordinates = e.latlng;
+            console.log(e.latlng);
+            setPosition(pos);
+            setIsPositioning(false);
+          }
+        }
+    });
+    return null;
+};
+
   return (
     <>
       <div className='container'>
-        <div className='container'>
-          <h1 className='text-center-mt-5'>WindTracker</h1>
-          <button onClick={refresh}>Refresh</button>
-          <button onClick={print}>Stampa</button>
-        </div>
-        <div className='container' style={{height:"800vh", width:"100vw"}}>
-            <MapContainer center={center} zoom={ZOOM_LEVEL} ref={mapRef}  style={{ height:"80vh",marginTop:"80px", marginBottom:'90px'
-            }} >
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-            />
-            {markers.loaded && !markers.error && markers.markers.map(element => <MarkerPoint marker={element}/>)}
+        <Navbar refresh={refresh} position={pickAPosition}/>
+        <div className='map-container'>
+            <MapContainer center={center} zoom={ZOOM_LEVEL} ref={mapRef} className='map' whenReady={setMap}>
+              <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+              />
+              {markers.loaded && !markers.error && markers.markers.map(element => <MarkerPoint marker={element}/>)}
 
-            {location.loaded && !location.error && (
+              {position.loaded && !position.error && (
                 <Marker
                 icon={myIcon}
                 position={[
-                    location.coordinates.lat,
-                    location.coordinates.lng,
+                    position.coordinates.lat,
+                    position.coordinates.lng,
                 ]}
                 ></Marker>
-            )}
+              )}
+              <PositionHandler />
             </MapContainer>
         </div>
 
+        <Bottombar />
       </div>
     </>
   )

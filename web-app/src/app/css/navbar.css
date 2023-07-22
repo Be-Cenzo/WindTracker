@@ -1,0 +1,92 @@
+.navbar-container{
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+}
+
+.navbar{
+    z-index: 10000;
+    background-color: rgba(255, 255, 255, 0.7);
+    width: 50%;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    margin: 16px 36px 0px 36px;
+    color: black;
+    padding: 8px;
+    min-width: 250px;
+    border: solid;
+    border-color: rgba(82, 164, 0, 0.64);
+}
+
+button{
+    background-color: transparent;
+    border: 0;
+    align-content: center;
+    display: flex;
+    justify-content: center;
+}
+
+.icon{
+    width: 28px;
+}
+
+.refresh-button{
+    width: auto;
+}
+
+.search-button{
+    width: auto;
+}
+
+.navbar-object{
+    z-index: 10000;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    margin-top: 16px;
+    color: black;
+    padding: 8px;
+    border: solid;
+    border-color: rgba(82, 164, 0, 0.64);
+}
+
+.navbar-buttons-small{
+    pointer-events: none;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+@media screen and (max-width: 500px) {
+    .search-button{
+        pointer-events: none;
+        opacity: 0;
+    }
+
+    .refresh-button{
+        pointer-events: none;
+        opacity: 0;
+    }
+
+    .navbar-buttons-small{
+        pointer-events: all;
+        opacity: 1;
+        height: auto;
+        width: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .navbar-buttons-small > button{
+        margin: 8px;
+    }
+}
