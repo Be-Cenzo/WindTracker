@@ -25,8 +25,8 @@ table = dynamodb.create_table(
         }
     ],
     ProvisionedThroughput = {
-        'ReadCapacityUnits': 10,
-        'WriteCapacityUnits': 10
+        'ReadCapacityUnits': 100,
+        'WriteCapacityUnits': 100
     }
 )
 
@@ -53,35 +53,7 @@ table = dynamodb.create_table(
         }
     ],
     ProvisionedThroughput = {
-        'ReadCapacityUnits': 10,
-        'WriteCapacityUnits': 10
-    }
-)
-
-table = dynamodb.create_table(
-    TableName = 'Sensors',
-    KeySchema = [
-        {
-            'AttributeName': 'sensorName',
-            'KeyType': 'HASH'
-        },
-        {
-            'AttributeName': 'createdAt',
-            'KeyType': 'RANGE'
-        }
-    ],
-    AttributeDefinitions = [
-        {
-            'AttributeName': 'sensorName',
-            'AttributeType': 'S'
-        },
-        {
-            'AttributeName': 'createdAt',
-            'AttributeType': 'N'
-        }
-    ],
-    ProvisionedThroughput = {
-        'ReadCapacityUnits': 10,
-        'WriteCapacityUnits': 10
+        'ReadCapacityUnits': 100,
+        'WriteCapacityUnits': 100
     }
 )

@@ -1,9 +1,5 @@
-resource "aws_s3_bucket" "test-bucket" {
-  bucket = "mybucket"
-}
-
 resource "aws_sqs_queue" "sqs_queue" {
-  name                        = "sqs_queue"
+  name = "sqs_queue"
 }
 
 data "aws_iam_policy_document" "assume_role" {
@@ -30,22 +26,22 @@ data "archive_file" "sqsTrigger" {
   output_path = "../functions/sqsTrigger/sqsTrigger.zip"
 }
 
-data "archive_file" "prova" {
-  type        = "zip"
-  source_file = "../functions/ProvaAPI/prova.py"
-  output_path = "../functions/ProvaAPI/prova.zip"
-}
-
-data "archive_file" "getSensors" {
-  type        = "zip"
-  source_file = "../functions/getSensors/getSensors.py"
-  output_path = "../functions/getSensors/getSensors.zip"
-}
-
 data "archive_file" "getDataForSensor" {
   type        = "zip"
   source_file = "../functions/getDataForSensor/getDataForSensor.py"
   output_path = "../functions/getDataForSensor/getDataForSensor.zip"
+}
+
+data "archive_file" "localSearch" {
+  type        = "zip"
+  source_file = "../functions/localSearch/localSearch.py"
+  output_path = "../functions/localSearch/localSearch.zip"
+}
+
+data "archive_file" "subscribeSensor" {
+  type        = "zip"
+  source_file = "../functions/subscribeSensor/subscribeSensor.py"
+  output_path = "../functions/subscribeSensor/subscribeSensor.zip"
 }
 
 data "archive_file" "sensorError" {
@@ -54,39 +50,19 @@ data "archive_file" "sensorError" {
   output_path = "../functions/sensorError/sensorError.zip"
 }
 
+data "archive_file" "fixSensor" {
+  type        = "zip"
+  source_file = "../functions/fixSensor/fixSensor.py"
+  output_path = "../functions/fixSensor/fixSensor.zip"
+}
+
 resource "aws_lambda_function" "sqsTriggerLambda" {
-  # If the file is not in the current working directory you will need to include a
-  # path.module in the filename.
   filename      = "../functions/sqsTrigger/sqsTrigger.zip"
   function_name = "sqsTrigger"
   role          = aws_iam_role.iam_for_lambda.arn
   handler       = "sqsTrigger.lambda_handler"
 
   source_code_hash = data.archive_file.sqsTrigger.output_base64sha256
-
-  runtime = "python3.9"
-
-}
-
-resource "aws_lambda_function" "provaLambda" {
-  filename      = "../functions/ProvaAPI/prova.zip"
-  function_name = "prova"
-  role          = aws_iam_role.iam_for_lambda.arn
-  handler       = "prova.lambda_handler"
-
-  source_code_hash = data.archive_file.prova.output_base64sha256
-
-  runtime = "python3.9"
-
-}
-
-resource "aws_lambda_function" "getSensors" {
-  filename      = "../functions/getSensors/getSensors.zip"
-  function_name = "getSensors"
-  role          = aws_iam_role.iam_for_lambda.arn
-  handler       = "getSensors.lambda_handler"
-
-  source_code_hash = data.archive_file.getSensors.output_base64sha256
 
   runtime = "python3.9"
 
@@ -104,6 +80,30 @@ resource "aws_lambda_function" "getDataForSensor" {
 
 }
 
+resource "aws_lambda_function" "localSearch" {
+  filename      = "../functions/localSearch/localSearch.zip"
+  function_name = "localSearch"
+  role          = aws_iam_role.iam_for_lambda.arn
+  handler       = "localSearch.lambda_handler"
+
+  source_code_hash = data.archive_file.localSearch.output_base64sha256
+
+  runtime = "python3.9"
+
+}
+
+resource "aws_lambda_function" "subscribeSensor" {
+  filename      = "../functions/subscribeSensor/subscribeSensor.zip"
+  function_name = "subscribeSensor"
+  role          = aws_iam_role.iam_for_lambda.arn
+  handler       = "subscribeSensor.lambda_handler"
+
+  source_code_hash = data.archive_file.subscribeSensor.output_base64sha256
+
+  runtime = "python3.9"
+
+}
+
 resource "aws_lambda_function" "sensorError" {
   filename      = "../functions/sensorError/sensorError.zip"
   function_name = "sensorError"
@@ -111,6 +111,18 @@ resource "aws_lambda_function" "sensorError" {
   handler       = "sensorError.lambda_handler"
 
   source_code_hash = data.archive_file.sensorError.output_base64sha256
+
+  runtime = "python3.9"
+
+}
+
+resource "aws_lambda_function" "fixSensor" {
+  filename      = "../functions/fixSensor/fixSensor.zip"
+  function_name = "fixSensor"
+  role          = aws_iam_role.iam_for_lambda.arn
+  handler       = "fixSensor.lambda_handler"
+
+  source_code_hash = data.archive_file.fixSensor.output_base64sha256
 
   runtime = "python3.9"
 
@@ -125,13 +137,10 @@ resource "aws_lambda_event_source_mapping" "event_source_mapping" {
 
 # API Gateway
 resource "aws_api_gateway_rest_api" "api" {
-  name = "myapi"
-}
-
-resource "aws_api_gateway_resource" "resource" {
-  path_part   = "getSensors"
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  rest_api_id = aws_api_gateway_rest_api.api.id
+  name = "api"
+  provisioner "local-exec" {
+    command = "python rest-file.py ${self.id}"
+  }
 }
 
 resource "aws_api_gateway_resource" "getDataForSensorResource" {
@@ -140,11 +149,22 @@ resource "aws_api_gateway_resource" "getDataForSensorResource" {
   rest_api_id = aws_api_gateway_rest_api.api.id
 }
 
-resource "aws_api_gateway_method" "method" {
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.resource.id
-  http_method   = "GET"
-  authorization = "NONE"
+resource "aws_api_gateway_resource" "localSearchResource" {
+  path_part   = "localSearch"
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.api.id
+}
+
+resource "aws_api_gateway_resource" "subscribeSensorResource" {
+  path_part   = "subscribeSensor"
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.api.id
+}
+
+resource "aws_api_gateway_resource" "fixSensorResource" {
+  path_part   = "fixSensor"
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.api.id
 }
 
 resource "aws_api_gateway_method" "getDataForSensorMethod" {
@@ -154,13 +174,25 @@ resource "aws_api_gateway_method" "getDataForSensorMethod" {
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_integration" "integration" {
-  rest_api_id             = aws_api_gateway_rest_api.api.id
-  resource_id             = aws_api_gateway_resource.resource.id
-  http_method             = aws_api_gateway_method.method.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.getSensors.invoke_arn
+resource "aws_api_gateway_method" "localSearchMethod" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.localSearchResource.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_method" "subscribeSensorMethod" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.subscribeSensorResource.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_method" "fixSensorMethod" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.fixSensorResource.id
+  http_method   = "POST"
+  authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "GDFSintegration" {
@@ -172,24 +204,52 @@ resource "aws_api_gateway_integration" "GDFSintegration" {
   uri                     = aws_lambda_function.getDataForSensor.invoke_arn
 }
 
+
+resource "aws_api_gateway_integration" "LSintegration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.localSearchResource.id
+  http_method             = aws_api_gateway_method.localSearchMethod.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.localSearch.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "SSintegration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.subscribeSensorResource.id
+  http_method             = aws_api_gateway_method.subscribeSensorMethod.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.subscribeSensor.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "FSintegration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.fixSensorResource.id
+  http_method             = aws_api_gateway_method.fixSensorMethod.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.fixSensor.invoke_arn
+}
+
+
 resource "aws_api_gateway_deployment" "deploy" {
   rest_api_id = aws_api_gateway_rest_api.api.id
 
   triggers = {
-    # NOTE: The configuration below will satisfy ordering considerations,
-    #       but not pick up all future REST API changes. More advanced patterns
-    #       are possible, such as using the filesha1() function against the
-    #       Terraform configuration file(s) or removing the .id references to
-    #       calculate a hash against whole resources. Be aware that using whole
-    #       resources will show a difference after the initial implementation.
-    #       It will stabilize to only change when resources change afterwards.
     redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.resource.id,
-      aws_api_gateway_method.method.id,
-      aws_api_gateway_integration.integration.id,
       aws_api_gateway_resource.getDataForSensorResource.id,
       aws_api_gateway_method.getDataForSensorMethod.id,
       aws_api_gateway_integration.GDFSintegration.id,
+      aws_api_gateway_resource.localSearchResource.id,
+      aws_api_gateway_method.localSearchMethod.id,
+      aws_api_gateway_integration.LSintegration.id,
+      aws_api_gateway_resource.subscribeSensorResource.id,
+      aws_api_gateway_method.subscribeSensorMethod.id,
+      aws_api_gateway_integration.SSintegration.id,
+      aws_api_gateway_resource.fixSensorResource.id,
+      aws_api_gateway_method.fixSensorMethod.id,
+      aws_api_gateway_integration.FSintegration.id,
     ]))
   }
 
@@ -227,4 +287,9 @@ resource "aws_lambda_permission" "sensorError_permission" {
     function_name = "${aws_lambda_function.sensorError.arn}"
     principal = "sns.amazonaws.com"
     source_arn = "${aws_sns_topic.errors_topic.arn}"
+}
+
+output "rest-api-id"{
+    description = "rest api id"
+    value = aws_api_gateway_rest_api.api.id
 }

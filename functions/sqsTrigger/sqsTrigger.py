@@ -13,12 +13,11 @@ def lambda_handler(event, context):
         payload = json.loads(record["body"])
         table = dynamodb.Table('WindData')
         latest = dynamodb.Table('LatestData')
-        data={'uuid': payload['uuid'], 'sensorName': payload['sensorName'], 'createdAt': payload['createdAt'], 'windSpeed': payload['windSpeed'], 'windDirection': payload['windDirection'], 'error': payload['error']}
+        data={'uuid': payload['uuid'], 'sensorName': payload['sensorName'], 'createdAt': payload['lastUpdated'], 'windSpeed': payload['windSpeed'], 'windDirection': payload['windDirection'], 'error': payload['error']}
         table.put_item(Item=data)
         latest.update_item(
-                Key={'sensorName': payload["sensorName"], 'createdAt': payload['sensorCreatedAt']},
-                UpdateExpression="set windSpeed=:ws, windDirection=:wd, lastUpdated=:lu, #error=:er",
+                Key={'sensorName': payload["sensorName"], 'createdAt': payload['createdAt']},
+                UpdateExpression="set windSpeed=:ws, windDirection=:wd, lastUpdated=:lu",
                 ExpressionAttributeValues={
-                    ':ws': payload['windSpeed'], ':wd': payload['windDirection'], ':lu': payload['createdAt'], ':er': payload['error']},
-                ExpressionAttributeNames= {"#error" : "error" },
+                    ':ws': payload['windSpeed'], ':wd': payload['windDirection'], ':lu': payload['lastUpdated']},
                 ReturnValues="UPDATED_NEW")

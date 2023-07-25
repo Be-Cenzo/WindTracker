@@ -8,7 +8,6 @@ def lambda_handler(event, context):
 
     for record in event['Records']:
         payload = json.loads(record["Sns"]["Message"])
-        sensors = dynamodb.Table('Sensors')
         latest = dynamodb.Table('LatestData')
         latest.update_item(
                 Key={'sensorName': payload["sensorName"], 'createdAt': payload['createdAt']},
