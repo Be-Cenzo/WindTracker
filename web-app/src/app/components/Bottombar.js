@@ -1,10 +1,12 @@
 import '../css/bottombar.css';
 import searchIcon from '../img/search.png';
 import refreshIcon from '../img/refresh.png';
+import upArrow from '../img/up.png';
+import downArrow from '../img/down.png';
+import { useState } from 'react';
 
 
 const Bottombar = (props) => {
-
     const searchBtn = <button onClick={props.refresh}>
                             <img className='icon' src={searchIcon.src}/>
                         </button>
@@ -13,22 +15,23 @@ const Bottombar = (props) => {
                             <img className='icon' src={refreshIcon.src}/>
                         </button>
 
+    const open = <div className='bottombar-content'>
+                    <div className='bottombar-toggle'>
+                        <img className='icon' src={downArrow.src} onClick={(e) => props.setIsOpen(false)} />
+                    </div>
+                        {props.children}
+                </div>
+    
+    const closed = <div className='bottombar-content'>
+                        <div className='bottombar-toggle'>
+                            <img className='icon' src={upArrow.src} onClick={(e) => props.setIsOpen(true)}/>
+                        </div>
+                    </div>
+
     return(
         <div className='bottombar-container'>
-            <div class="search-button bottombar-object">
-                {searchBtn}
-            </div>
             <div className="bottombar">
-                <div>
-                    <h1 className='text-center-mt-5'>WindTracker</h1>
-                    <div className='bottombar-buttons-small'>
-                        {searchBtn}
-                        {refreshBtn}
-                    </div>
-                </div>
-            </div>
-            <div class="refresh-button bottombar-object">
-                {refreshBtn}
+                {props.isOpen ? open : closed}
             </div>
         </div>
     );

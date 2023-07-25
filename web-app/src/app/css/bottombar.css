@@ -8,6 +8,8 @@
 }
 
 .bottombar{
+    padding: 1rem;
+    font-size: 1.75rem;
     z-index: 10000;
     background-color: rgba(255, 255, 255, 0.7);
     width: 50%;
@@ -23,4 +25,23 @@
     border: solid;
     border-bottom: 0px;
     border-color: rgba(82, 164, 0, 0.64);
+}
+
+.bottombar-toggle{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.icon{
+    height: 36px;
+    width: auto;
+}
+
+@media screen and (max-width: 500px) {
+    .bottombar{
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+    }
 }

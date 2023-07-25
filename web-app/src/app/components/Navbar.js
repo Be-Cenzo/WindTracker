@@ -5,11 +5,11 @@ import refreshIcon from '../img/refresh.png';
 
 const Navbar = (props) => {
 
-    const searchBtn = <button onClick={props.position}>
+    const searchBtn = <button  className='nav-button' onClick={props.openBottombar}>
                             <img className='icon' src={searchIcon.src}/>
                         </button>
     
-    const refreshBtn = <button onClick={props.refresh}>
+    const refreshBtn = <button className='nav-button' onClick={props.refresh}>
                             <img className='icon' src={refreshIcon.src}/>
                         </button>
 

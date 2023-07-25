@@ -5,6 +5,7 @@ const { Marker, Popup, Tooltip } = require("react-leaflet");
 import L from 'leaflet';
 import marker from '../img/wind.png';
 import '../css/marker.css';
+import { useEffect, useRef, useState } from 'react';
 
 const myIcon = new L.Icon({
     iconUrl: marker.src,
@@ -14,10 +15,9 @@ const myIcon = new L.Icon({
 
 
 const MarkerPoint = (props) => {
+    const ref = useRef(null);
     const date = new Date(props.marker.lastUpdated*1000).toString();
-    console.log(props);
-    console.log("data");
-    console.log(date);
+    const errorClass = props.marker.error ? 'error' : '';
 
     const divIcon = new L.DivIcon({
         className: 'my-div-icon',
@@ -27,22 +27,24 @@ const MarkerPoint = (props) => {
                 </div>  
     })
 
+    const open = (e) => {
+        props.openBottombar(e, props.marker);
+    }  
+
     return(
         <>
-        <div id={props.marker.name}>
-        </div>
         <Marker
-            key={props.marker.name}
+            eventHandlers={{ click: open }}
+            key={props.marker.sensorName}
             icon={myIcon}
             position={[
                 props.marker.latitude,
                 props.marker.longitude,
             ]}>
-                <Popup>
-                    Name: {props.marker.name}<br/>Wind Speed: {props.marker.windSpeed}km/h<br/>Wind Direction: {props.marker.windDirection}<br/>Last Updated: {date}
-                </Popup>
-                <Tooltip permanent={true} direction='bottom' opacity={1} offset={[0, 20]} className='tooltip'>
-                    {props.marker.windSpeed}km/h
+                <Tooltip ref={ref} permanent={true} direction='bottom' opacity={1} offset={[0, 25]} className='tooltip remove'>
+                    <div className={'tooltip ' + errorClass}>
+                        {props.marker.windSpeed}km/h
+                    </div>
                 </Tooltip>
         </Marker>
         </>
