@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 const myIcon = new L.Icon({
     iconUrl: marker.src,
     iconSize: [54, 72],
-    iconAnchor: [27, 36]
+    iconAnchor: [27, 72]
 });
 
 
@@ -42,7 +42,7 @@ const MarkerPoint = (props) => {
                 props.marker.latitude,
                 props.marker.longitude,
             ]}>
-                <Tooltip ref={ref} permanent={true} direction='bottom' opacity={1} offset={[0, 25]} className='tooltip remove'>
+                <Tooltip ref={ref} permanent={true} direction='bottom' opacity={1} offset={[0, -10]} className='tooltip remove'>
                     <div className={'tooltip ' + errorClass}>
                         {props.marker.windSpeed}km/h
                     </div>

@@ -15,7 +15,8 @@ import MarkerCard from './MarkerCard';
 import api from '../rest.json';
 const myIcon = new L.Icon({
     iconUrl: marker.src,
-    iconSize: [60, 55]
+    iconSize: [49, 70],
+    iconAnchor: [24, 70]
 });
 
 const OpenStreetMap = () => {

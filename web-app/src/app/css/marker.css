@@ -44,3 +44,15 @@
     align-items: start;
     padding-left: 0.5rem;
 }
+
+@media screen and (max-width: 500px) {
+    .marker-card{
+        flex-direction: column;
+    }
+    .marker-card-panel{
+        margin-bottom: 0.5rem;
+    }
+    .right-panel{
+        width: 75%;
+    }
+}

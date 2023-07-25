@@ -8,7 +8,7 @@
 
 .navbar{
     z-index: 10000;
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: rgb(255, 255, 255);
     width: 50%;
     border-radius: 50px;
     display: flex;
@@ -45,7 +45,7 @@
 
 .navbar-object{
     z-index: 10000;
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: rgb(255, 255, 255);
     border-radius: 50px;
     display: flex;
     align-items: center;
