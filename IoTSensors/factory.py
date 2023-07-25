@@ -39,7 +39,6 @@ class Factory:
             )
             name = attr["Attributes"]["DisplayName"]
             if(name == "errors-topic"):
-                print(arn)
                 self.topic_arn = arn
                 break
     
@@ -47,25 +46,8 @@ class Factory:
         dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:4566")
         table = dynamodb.Table('Sensors')
         latest = dynamodb.Table('LatestData')
-        for i in range(self.sensorNum):
-            item = self.sensors[i].getSignature()
-            id = str(uuid.uuid4())
-            item.update({"uuid": id})
-            response = table.put_item(
-                Item = item
-            )
-            data = {
-                "windSpeed": self.sensors[i].getWindSpeed(),
-                "windDirection": self.sensors[i].getWindSpeed(),
-                "sensorName": item["sensorName"],
-                "createdAt": item["createdAt"],
-                "lastUpdated": item["createdAt"],
-                "error": self.sensors[i].isError()
-            }
-            response = latest.put_item(
-                Item = data
-            )
-            print(data)
+        for i in range(self.sensorNum):            
+            self.sensors[i].subscribeToInfrastracture()
     
     def printAll(self):
         for i in range(self.sensorNum):
@@ -98,9 +80,12 @@ class Factory:
                 msg = self.sensors[i].getMessage()
                 id = str(uuid.uuid4())
                 time = int(datetime.datetime.now().timestamp())
-                msg.update({"uuid": id, "createdAt": time, "sensorCreatedAt": int(self.sensors[i].getCreatedAt())})
+                msg.update({"uuid": id})
                 #print(msg)
                 postMessageToQueue(msg, sqs)
+
+    def fixSensor(self, pos):
+        self.sensors[pos].fixSensor()
 
 def postMessageToQueue(message, sqs_client):
     queue_url = 'http://localhost:4566/000000000000/sqs_queue'
@@ -110,25 +95,12 @@ def postMessageToQueue(message, sqs_client):
             json.dumps(message)
         )
     )
-    #print(resp['MessageId'])
 
 def prova(e, x):
     while True :
         x.updateWindSpeed()
         if e.is_set():
             break
-
-"""
-factory = Factory("Factory", num)
-factory.postToQueue()
-event = threading.Event()
-
-thread1 = threading.Thread(name='h1', target=factory.updateValues, args=(event, update))
-thread1.start()
-time.sleep(duration)
-
-event.set()
-"""
 
 num = int(sys.argv[1])
 update = int(sys.argv[2])
@@ -145,15 +117,20 @@ updater = threading.Thread(name='h1', target=factory.updateValues, args=(toggleU
 updater.start()
 
 while True :
+    print("Insert:\n - 'start' to start updating values\n - 'stop' to stop updating values\n - 'fix' to fix a sensor\n - 'exit' - to close program")
     y = input()
-    if y == "t" :
+    if y == "stop" :
+        if not toggleUpdate.is_set():
+            toggleUpdate.set()
+        print("Stopped")
+    if y == "start" :
         if toggleUpdate.is_set():
             toggleUpdate.clear()
-        else:
-            toggleUpdate.set()
-        print(f"toggleUpdate is now:{toggleUpdate.is_set()}")
-    if y == "stop" :
+        print("Started updating values")
+    if y == "fix":
+        print("Which component is fixed?")
+        pos = input()
+        factory.fixSensor(int(pos))
+    if y == "exit" :
         stopUpdate.set()
-        print("Stopped")
-    if y == "s" :
         break

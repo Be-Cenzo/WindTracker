@@ -5,8 +5,17 @@ import datetime
 import threading
 import boto3
 import json
+import requests
+
+restfile = open("rest.json")
+data = json.load(restfile)
+
+restid = data["rest_api_id"]
+restfile.close()
+basePath = f"http://localhost:4566/restapis/{restid}/local/_user_request_/"
 
 class Sensor:
+
     def __init__(self, name, latitude, longitude):
         self.name = name
         self.latitude = latitude
@@ -54,7 +63,7 @@ class Sensor:
         minus = 1
         if randrange(2) and self.windSpeed > 1:
             minus = -1
-        self.windSpeed = self.windSpeed+(randrange(10)*self.casuality*minus)
+        self.windSpeed = round(self.windSpeed+(randrange(10)*self.casuality*minus), 2)
     
     def updateWindDirection(self):
         if (randrange(10)/10) > self.changeDirectionThreshold:
@@ -62,7 +71,7 @@ class Sensor:
     
     def updateError(self):
         if (randrange(100)/100) >= self.errorThreshold:
-            print("Error True")
+            print(f"{self.name} error occured")
             self.error = True
 
     
@@ -84,9 +93,22 @@ class Sensor:
             "windSpeed": str(self.windSpeed),
             "windDirection": self.windDirection,
             "error": self.error,
-            "createdAt": int(self.createdAt)
+            "createdAt": int(self.createdAt),
+            "lastUpdated": int(datetime.datetime.now().timestamp())
         }
         return message
+    
+    def subscribeToInfrastracture(self):
+        data = self.getMessage()
+        data["lastUpdated"] = data["createdAt"]
+        x = requests.post(f"{basePath}subscribeSensor", json = data)
+    
+    def fixSensor(self):
+        self.error = False
+        data = self.getMessage()
+        x = requests.post(f"{basePath}fixSensor", json = data)
+        print("Fixed")
+
     
     def postToTopic(self, topic_arn, message, subject):
         sns_resource = boto3.client('sns', endpoint_url='http://localhost:4566')
@@ -105,21 +127,3 @@ def automaticUpdate(sensor, event):
         time.sleep(1)
         if event.is_set():
             break
-        
-"""
-print(f"Arguments count: {len(sys.argv)}")
-s = Sensor("prova", 0, 0)
-print(f"Velocità del vento: {s.getValue()[0]}km/h")
-print(f"Direzione del vento: {s.getValue()[1]}")
-
-event = threading.Event()
-
-thread1 = threading.Thread(name='h1', target=automaticUpdate, args=(s, event))
-thread1.start()
-time.sleep(1.5)
-
-print(f"Velocità del vento: {s.getValue()[0]}km/h")
-print(f"Direzione del vento: {s.getValue()[1]}")
-
-event.set()
-"""
