@@ -71,7 +71,7 @@ class Factory:
                         self.sensors[i].updateError()
                         if self.sensors[i].isError():
                             self.sensors[i].postToTopic(self.topic_arn, self.sensors[i].getSignature(), "Errore nel sensore!")
-                    self.postToQueue()
+                self.postToQueue()
 
     def postToQueue(self):
         sqs = boto3.client('sqs', endpoint_url='http://localhost:4566')
@@ -104,7 +104,6 @@ def prova(e, x):
 
 num = int(sys.argv[1])
 update = int(sys.argv[2])
-duration = int(sys.argv[3])
 
 factory = Factory("Factory", num)
 factory.postToQueue()

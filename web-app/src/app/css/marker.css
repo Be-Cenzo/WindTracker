@@ -23,4 +23,24 @@
 .marker-card{
     min-height: 30vh;
     padding: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-icon{
+    width: 80%;
+}
+
+.marker-card-panel{
+    width: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.right-panel{
+    flex-direction: column;
+    align-items: start;
+    padding-left: 0.5rem;
 }

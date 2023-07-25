@@ -3,13 +3,14 @@
 const { Marker, Popup, Tooltip } = require("react-leaflet");
 
 import L from 'leaflet';
-import marker from '../img/wind.png';
+import marker from '../img/wind-marker.png';
 import '../css/marker.css';
 import { useEffect, useRef, useState } from 'react';
 
 const myIcon = new L.Icon({
     iconUrl: marker.src,
-    iconSize: [60, 55]
+    iconSize: [54, 72],
+    iconAnchor: [27, 36]
 });
 
 
