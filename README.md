@@ -39,7 +39,7 @@ Once you have installed everything you can run **WindTracker** following these s
 ### Clone repository to your machine
 
 ```
-git clone https://github.com/Be-Cenzo/Serverless-Project 
+git clone https://github.com/Be-Cenzo/WindTracker 
 ```
 
 ### Start Docker
