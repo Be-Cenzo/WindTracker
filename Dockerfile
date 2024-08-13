@@ -20,15 +20,9 @@ RUN apt update && apt install terraform
 COPY deploy_infra.sh /home/deploy_infra.sh
 WORKDIR /home
 
-#RUN export AWS_ENDPOINT_URL="localstack:4566"
+RUN apt-get install dos2unix
+RUN dos2unix deploy_infra.sh
 
-#ENTRYPOINT [ "bash" ]
 ENTRYPOINT [ "bash", "deploy_infra.sh" ]
-#CMD [ "python", "IoTSensors/factory.py 50 5" ]
 
-#RUN tflocal init
-#RUN tflocal apply
-#
-#WORKDIR /home/functions
-#RUN python create_table.py
 
