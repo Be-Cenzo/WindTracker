@@ -22,19 +22,9 @@ To sum up WindTracker allows the user to:
 - Store data about wind to make predictions about wind direction and speed
 - Visualize live data about wind through a web application
 
-
-
 ## Installation
 To be able to run **WindTracker** you need to install:
 - *Docker*: you can download it from [here](https://www.docker.com/products/docker-desktop/).
-- *Python*: you can download it from [here](https://www.python.org/downloads/).
-- *Node*: you can download it from [here](https://nodejs.org/en/download).
-- *Terraform*: you can download it from [here](https://developer.hashicorp.com/terraform/downloads).
-- *Terraform-local*: you can download it from [here](https://docs.localstack.cloud/user-guide/integrations/terraform/).
-
-
-## How To Run It
-Once you have installed everything you can run **WindTracker** following these steps:
 
 ### Clone repository to your machine
 
@@ -43,53 +33,17 @@ git clone https://github.com/Be-Cenzo/WindTracker
 ```
 
 ### Start Docker
-
+Open a terminal an in WindTracker folder run:
 ```
 docker-compose up -d --build
 ```
 
-### Build Infrastracture
-Move to terraform folder:
+When all the containers are started you can access the web application at http://localhost.
+
+As the project is composed also of a command-line application that simulates the behaviour of the sensors, you have to access to the container that is running that application, so run this command in a terminal:
 ```
-cd \terraform
-```
-Run:
-```
-tflocal apply
+docker attach terraform-local
 ```
 
-### Create DynamoDB
-Move to functions folder:
-```
-cd \functions
-```
-Run:
-```
-python create_table.py
-```
-
-### Start IoT Sensors Simulator
-Move to IoT Sensors folder:
-```
-cd \IoTSensors
-```
-
-Run factory:
-```
-python factory.py {numberOfSensors} {UpdateRate}
-```
-- numberOfSensors is the number of sensors that the factory will create
-- updateRate is the time in which sensors will update their values expressed in seconds
-
-### Start web application
-Move to web application folder:
-```
-cd \web-app
-```
-
-Run web application:
-```
-npm run dev
-```
-
-Now you can open http://localhost:3000
+At this point when you see this menu you can start the simulation by typing 'start'.
+![alt text](menu.png)
