@@ -16,7 +16,7 @@ Another option is to use this data to make statistical analysis, about a determi
 
 The Serverless approach for the infrastructure gives us benefits like minimizing time to market, that is given by the fact that we don't have to manage infrastructure, and obviously it allows us to reduce costs by paying for just what we use.
 
-To sum up WindTracker allows the user to:
+To sum up **WindTracker** allows the user to:
 - Add wind sensors to the infrastracture
 - Handle errors that can occur to the sensors
 - Store data about wind to make predictions about wind direction and speed
@@ -33,7 +33,7 @@ git clone https://github.com/Be-Cenzo/WindTracker
 ```
 
 ### Start Docker
-Open a terminal an in WindTracker folder run:
+Open a terminal and in WindTracker folder run:
 ```
 docker-compose up -d --build
 ```
