@@ -1,6 +1,7 @@
 import boto3
+import os
 
-dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:4566")
+dynamodb = boto3.resource('dynamodb', endpoint_url=f"http://{os.environ.get('LOCALSTACK_HOSTNAME')}:{os.environ.get('EDGE_PORT')}")
 
 table = dynamodb.create_table(
     TableName = 'WindData',
@@ -57,3 +58,5 @@ table = dynamodb.create_table(
         'WriteCapacityUnits': 100
     }
 )
+
+print("Tables created!")

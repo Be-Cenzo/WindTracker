@@ -6,13 +6,16 @@ import threading
 import boto3
 import json
 import requests
+import os
 
 restfile = open("rest.json")
 data = json.load(restfile)
 
 restid = data["rest_api_id"]
 restfile.close()
-basePath = f"http://localhost:4566/restapis/{restid}/local/_user_request_/"
+
+endpoint = f"http://{os.environ.get('LOCALSTACK_HOSTNAME')}:{os.environ.get('EDGE_PORT')}"
+basePath = f"{endpoint}/restapis/{restid}/local/_user_request_/"
 
 class Sensor:
 
@@ -111,7 +114,7 @@ class Sensor:
 
     
     def postToTopic(self, topic_arn, message, subject):
-        sns_resource = boto3.client('sns', endpoint_url='http://localhost:4566')
+        sns_resource = boto3.client('sns', endpoint_url=endpoint)
         response = sns_resource.publish(
             TopicArn=topic_arn,
             Message=json.dumps({'default':json.dumps(message)}),

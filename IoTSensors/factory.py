@@ -8,6 +8,9 @@ import boto3
 import json
 import datetime
 import uuid
+import os
+
+endpoint = f"http://{os.environ.get('LOCALSTACK_HOSTNAME')}:{os.environ.get('EDGE_PORT')}"
 
 class Factory:
     def __init__(self, name, sensorNum):
@@ -29,7 +32,7 @@ class Factory:
             self.sensors.append(sensor)
 
     def getTopicArn(self):
-        sns = boto3.client('sns', endpoint_url='http://localhost:4566')
+        sns = boto3.client('sns', endpoint_url=endpoint)
         all_topics = sns.list_topics()
         all_topics = all_topics["Topics"]
         for topic in all_topics:
@@ -43,7 +46,7 @@ class Factory:
                 break
     
     def subscribeToInfrastracture(self):
-        dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:4566")
+        dynamodb = boto3.resource('dynamodb', endpoint_url=endpoint)
         table = dynamodb.Table('Sensors')
         latest = dynamodb.Table('LatestData')
         for i in range(self.sensorNum):            
@@ -74,7 +77,7 @@ class Factory:
                 self.postToQueue()
 
     def postToQueue(self):
-        sqs = boto3.client('sqs', endpoint_url='http://localhost:4566')
+        sqs = boto3.client('sqs', endpoint_url=endpoint)
         for i in range(self.sensorNum):
             if not self.sensors[i].isError():
                 msg = self.sensors[i].getMessage()
@@ -88,7 +91,7 @@ class Factory:
         self.sensors[pos].fixSensor()
 
 def postMessageToQueue(message, sqs_client):
-    queue_url = 'http://localhost:4566/000000000000/sqs_queue'
+    queue_url = f'{endpoint}/000000000000/sqs_queue'
     resp = sqs_client.send_message(
         QueueUrl=queue_url,
         MessageBody=(

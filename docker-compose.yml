@@ -3,7 +3,7 @@ version: "3.8"
 services:
   localstack:
     container_name: "localstack"
-    image: localstack/localstack:2.2
+    image: localstack/localstack:3.0
     ports:
       - "4566:4566"            # LocalStack Gateway
       - "4510-4559:4510-4559"  # external services port range
@@ -14,3 +14,49 @@ services:
     volumes:
       - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - windtracker
+
+  web-app:
+    container_name: "web-app"
+    build:
+      context: /web-app
+      dockerfile: Dockerfile
+    image: web-app
+    ports:
+      - 80:3000
+    networks:
+      - windtracker
+    volumes:
+      - web-app:/home/web-app
+
+  terraform-local:
+    container_name: "terraform-local"
+    build:
+      context: /
+      dockerfile: Dockerfile
+    image: terraform-local
+    tty: true
+    stdin_open: true
+    depends_on:
+      localstack:
+        condition: service_started
+    environment:
+      - AWS_ACCESS_KEY_ID=key
+      - AWS_SECRET_ACCESS_KEY=secret_key
+      - AWS_DEFAULT_REGION=us-east-2
+      - AWS_ENDPOINT_URL=localstack:4566
+      - LOCALSTACK_HOSTNAME=localstack
+      - EDGE_PORT=4566
+    networks:
+      - windtracker
+    volumes:
+      - web-app:/home/web-app
+
+networks:
+  windtracker:
+    name: windtracker
+    driver: bridge
+
+volumes:
+  web-app:
